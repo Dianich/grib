@@ -1,0 +1,74 @@
+import os
+from keras.preprocessing.image import load_img
+from keras.preprocessing.image import img_to_array
+import tensorflow as tf
+import numpy as np
+import keras
+from keras.models import Sequential
+from tensorflow.keras.layers import Conv2D,MaxPooling2D,Activation,Dense,Dropout,Flatten
+from tensorflow.python.keras.preprocessing import image
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+pyt = os.getcwd()
+train = 'train'
+val = 'val'
+test = 'test'
+
+epoh = 20
+batch_size = 5
+shape =(150, 150, 3)
+
+datagen = ImageDataGenerator(rescale=1./255)
+train_generator = datagen.flow_from_directory(train,
+                                              target_size=(150, 150),
+                                              batch_size=batch_size,
+                                              class_mode='binary')
+val_generator = datagen.flow_from_directory(val,
+                                            target_size=(150, 150),
+                                            batch_size=batch_size,
+                                            class_mode='binary')
+test_generator = datagen.flow_from_directory(test,
+                                             target_size=(150, 150),
+                                             batch_size=batch_size,
+                                             class_mode='binary')
+
+clas_=train_generator.class_indices
+print(clas_)
+
+model = Sequential()
+model.add(Conv2D(32, (3, 3),input_shape=shape))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(32, (3, 3)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(64, (3, 3)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Flatten())
+model.add(Dense(64))
+model.add(Activation('relu'))
+model.add(Dropout(0.5))
+model.add(Dense(1))
+model.add(Activation('sigmoid'))
+
+model.compile(loss='binary_crossentropy',
+              optimizer='adam',
+              metrics=['accuracy'])
+model.fit(
+    train_generator,
+    epochs=epoh,
+    validation_data=val_generator)
+file = 'grib.jpg'
+image = image.load_img(file,target_size=(150, 150))
+img = img_to_array(image)
+img = np.expand_dims(img,axis=0)
+img /= 255.
+yhat = model.predict(img)
+predicted_class = model.predict_classes(img)[0]
+if predicted_class == 1:
+    print('Мухомор')
+else:
+    print('Боровик')
